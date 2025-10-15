@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="HangmanTests" tests="6" skipped="0" failures="0" errors="0" timestamp="2025-10-15T11:27:54.983Z" hostname="MacBook-Pro---lfalcao-3.local" time="0.044">
+  <properties/>
+  <testcase name="getUnfilledWord should return a valid string for a valid length()" classname="HangmanTests" time="0.03"/>
+  <testcase name="revealChar should return the same currentWord for non existing char in wordToGuess()" classname="HangmanTests" time="0.008"/>
+  <testcase name="revealChar should return the same wordToGuess when the last hidden char is passed()" classname="HangmanTests" time="0.001"/>
+  <testcase name="getUnfilledWord should return an empty string for 0 length()" classname="HangmanTests" time="0.0"/>
+  <testcase name="revealChar should reveal an non revealed char()" classname="HangmanTests" time="0.001"/>
+  <testcase name="revealChar should return the same currentWord for an already revealed char()" classname="HangmanTests" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
