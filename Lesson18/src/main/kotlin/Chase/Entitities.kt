@@ -9,43 +9,49 @@ const val HERO_IMAGE_WIDTH = 288
 const val HERO_IMAGE_HEIGHT = 192
 const val HERO_IMAGE_HORIZONTAL_SPRITES = 6
 const val HERO_IMAGE_VERTICAL_SPRITES = 4
-const val SPRITE_WIDTH = HERO_IMAGE_WIDTH/HERO_IMAGE_HORIZONTAL_SPRITES
-const val SPRITE_HEIGHT = HERO_IMAGE_HEIGHT/HERO_IMAGE_VERTICAL_SPRITES
+const val HERO_SPRITE_WIDTH = HERO_IMAGE_WIDTH/HERO_IMAGE_HORIZONTAL_SPRITES
+const val HERO_SPRITE_HEIGHT = HERO_IMAGE_HEIGHT/HERO_IMAGE_VERTICAL_SPRITES
+const val NUM_ROBOTS = 5
+const val ROBOT_SPRITE_SIZE = 64
 
 val CANVAS_WIDTH = COLS * SQUARE_SIZE + (COLS-1) * GRID_THICKNESS
 val CANVAS_HEIGHT = ROWS * SQUARE_SIZE + (ROWS-1) * GRID_THICKNESS
 
 data class ChaseGame(val player: Hero, val robots: List<Robot>)
+
 data class Hero(val position: Cell, val direction: Direction)
+
 data class Robot(val position: Cell)
 
 data class Cell(val row: Int, val col: Int)
+
 fun Cell.add( direction: Direction) : Cell {
     if(direction == Direction.NONE)
         return this
-    val newLine = when(direction) {
+    var newLine = when(direction) {
         Direction.UP, Direction.UP_RIGHT, Direction.UP_LEFT  -> row - 1
         Direction.DOWN, Direction.DOWN_RIGHT, Direction.DOWN_LEFT -> row + 1
         else -> row
     }
+    newLine = newLine.coerceIn(0, ROWS-1)
 
-    val newCol = when(direction) {
+    var newCol = when(direction) {
         Direction.LEFT, Direction.DOWN_LEFT, Direction.UP_LEFT  -> col - 1
         Direction.RIGHT, Direction.UP_RIGHT, Direction.DOWN_RIGHT -> col + 1
         else -> col
     }
+    newCol = newCol.coerceIn(0, COLS-1)
     return Cell(newLine, newCol)
 }
 
-
-enum class Direction(val pos: Int) {
-    DOWN(0),
-    LEFT(1),
-    RIGHT(2),
-    UP(3),
-    UP_LEFT(4),
-    UP_RIGHT(5),
-    DOWN_LEFT(6),
-    DOWN_RIGHT(7),
-    NONE(99)
+enum class Direction(val spritePosition: Cell) {
+    DOWN(Cell(0, 1)),
+    LEFT(Cell(1, 1)),
+    RIGHT(Cell(2, 1)),
+    UP(Cell(3, 1)),
+    UP_LEFT(Cell(1,3)),
+    UP_RIGHT(Cell(3, 5)),
+    DOWN_LEFT(Cell(0,3)),
+    DOWN_RIGHT(Cell(2, 4)),
+    NONE(Cell(-1, -1))
 }
