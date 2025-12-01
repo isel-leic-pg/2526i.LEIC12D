@@ -1,57 +1,172 @@
-package isel.pg.li32d.lesson18.Chase
+package isel.pg.li32d.lesson19.Chase
+
+// The goal is to implement the Chase Game.
+// The chase is a grid game that has 2 kind of actors:
+// The player and the
+// robots. The robot only moves when the player moves.
+// The robots win if one of the robots is in the same cell
+// the player is. When two robots are in the same cell,
+// they both disappear.
 
 
-val COLS = 15
-val ROWS = 10
-val SQUARE_SIZE = 53
-val GRID_THICKNESS = 1
-const val HERO_IMAGE_WIDTH = 288
-const val HERO_IMAGE_HEIGHT = 192
-const val HERO_IMAGE_HORIZONTAL_SPRITES = 6
-const val HERO_IMAGE_VERTICAL_SPRITES = 4
-const val HERO_SPRITE_WIDTH = HERO_IMAGE_WIDTH/HERO_IMAGE_HORIZONTAL_SPRITES
-const val HERO_SPRITE_HEIGHT = HERO_IMAGE_HEIGHT/HERO_IMAGE_VERTICAL_SPRITES
-const val NUM_ROBOTS = 5
-const val ROBOT_SPRITE_SIZE = 64
+import pt.isel.canvas.Canvas
+import pt.isel.canvas.onFinish
+import pt.isel.canvas.onStart
+import kotlin.collections.forEach
 
-val CANVAS_WIDTH = COLS * SQUARE_SIZE + (COLS-1) * GRID_THICKNESS
-val CANVAS_HEIGHT = ROWS * SQUARE_SIZE + (ROWS-1) * GRID_THICKNESS
 
-data class ChaseGame(val player: Hero, val robots: List<Robot>)
+val c = Canvas(CANVAS_WIDTH, CANVAS_HEIGHT)
 
-data class Hero(val position: Cell, val direction: Direction)
 
-data class Robot(val position: Cell)
+var game = createGame()
 
-data class Cell(val row: Int, val col: Int)
+fun main() {
+    println("Begin")
 
-fun Cell.add( direction: Direction) : Cell {
-    if(direction == Direction.NONE)
-        return this
-    var newLine = when(direction) {
-        Direction.UP, Direction.UP_RIGHT, Direction.UP_LEFT  -> row - 1
-        Direction.DOWN, Direction.DOWN_RIGHT, Direction.DOWN_LEFT -> row + 1
-        else -> row
+    onStart {
+        //c.showHeroSprite(2,1)
+        c.drawBoard()
     }
-    newLine = newLine.coerceIn(0, ROWS-1)
 
-    var newCol = when(direction) {
-        Direction.LEFT, Direction.DOWN_LEFT, Direction.UP_LEFT  -> col - 1
-        Direction.RIGHT, Direction.UP_RIGHT, Direction.DOWN_RIGHT -> col + 1
-        else -> col
+    c.onKeyPressed {
+        var newDirection = it.char.newDirection()
+        var newHeroCell = game.player.position.add(newDirection)
+        newDirection = if(newDirection == Direction.NONE)
+            game.player.direction
+        else
+            newDirection
+
+        val newRobots = game.robots.moveRobots(newHeroCell)
+        val newGarbage =  game.garbage.detectCollisions(newRobots)
+        game = ChaseGame(
+            Hero(newHeroCell, newDirection),
+            newRobots,
+            newGarbage
+
+        )
+        c.drawBoard()
     }
-    newCol = newCol.coerceIn(0, COLS-1)
-    return Cell(newLine, newCol)
+
+    onFinish {
+        println("Finish")
+    }
+    println("End")
 }
 
-enum class Direction(val spritePosition: Cell) {
-    DOWN(Cell(0, 1)),
-    LEFT(Cell(1, 1)),
-    RIGHT(Cell(2, 1)),
-    UP(Cell(3, 1)),
-    UP_LEFT(Cell(1,3)),
-    UP_RIGHT(Cell(3, 5)),
-    DOWN_LEFT(Cell(0,3)),
-    DOWN_RIGHT(Cell(2, 4)),
-    NONE(Cell(-1, -1))
+private fun List<Robot>.moveRobots(newHeroCell: Cell): List<Robot> {
+    return this.map { robot ->
+        var newRow = robot.position.row
+        var newCol = robot.position.col
+
+        if(newHeroCell.row != robot.position.row && newHeroCell.row - robot.position.row < newHeroCell.col - robot.position.col) {
+            newRow += when {
+                newHeroCell.row > robot.position.row -> 1
+                newHeroCell.row < robot.position.row -> -1
+                else -> 0
+            }
+        } else {
+            newCol += when {
+                newHeroCell.col > robot.position.col -> 1
+                newHeroCell.col < robot.position.col -> -1
+                else -> 0
+            }
+        }
+     Robot(Cell(newRow, newCol))
+    }
+
 }
+
+private fun Char.newDirection() : Direction {
+    return when(this) {
+        'w' -> Direction.UP
+        'x' -> Direction.DOWN
+        'a' -> Direction.LEFT
+        'd' -> Direction.RIGHT
+        'e' -> Direction.UP_RIGHT
+        'q' -> Direction.UP_LEFT
+        'z' -> Direction.DOWN_LEFT
+        'c' -> Direction.DOWN_RIGHT
+        else -> Direction.NONE
+    }
+
+}
+
+
+
+
+fun Canvas.drawBoard() {
+    this.erase()
+    for (i in 1..<COLS) {
+        val x = i*(SQUARE_SIZE+GRID_THICKNESS)-GRID_THICKNESS
+        c.drawLine(x, 0, x, CANVAS_HEIGHT , thickness = GRID_THICKNESS)
+    }
+
+    (1..<ROWS).forEach {
+        val y = it * (SQUARE_SIZE + GRID_THICKNESS) - GRID_THICKNESS
+        c.drawLine(0, y, CANVAS_WIDTH, y, thickness = GRID_THICKNESS)
+    }
+    game.player.drawHero()
+    game.robots.drawRobots()
+    game.robots.drawGarbage()
+
+}
+
+
+fun Canvas.showHeroSprite(row: Int, col: Int) {
+    c.drawImage("hero.png|${col*HERO_SPRITE_WIDTH},${row* HERO_SPRITE_HEIGHT},${HERO_SPRITE_WIDTH},${HERO_SPRITE_HEIGHT}", 0, 0, 100, 100)
+}
+
+fun Hero.drawHero() {
+    val x =  this.direction.spritePosition.col * HERO_SPRITE_WIDTH
+    val y =  this.direction.spritePosition.row * HERO_SPRITE_HEIGHT
+    c.drawImage("hero.png|$x,$y,$HERO_SPRITE_WIDTH,$HERO_SPRITE_HEIGHT", this.position.col.toGridPosition() , this.position.row.toGridPosition(), HERO_SPRITE_WIDTH, HERO_SPRITE_HEIGHT)
+}
+
+
+fun List<Robot>.drawRobots() {
+    this.forEach {
+        c.drawImage("robot.png|0,0,$ROBOT_SPRITE_SIZE,$ROBOT_SPRITE_SIZE", it.position.col.toGridPosition() , it.position.row.toGridPosition(), HERO_SPRITE_WIDTH, HERO_SPRITE_HEIGHT)
+    }
+}
+
+private fun List<Robot>.drawGarbage() {
+    this.forEach {
+        c.drawImage("garbage.png|0,0,$ROBOT_SPRITE_SIZE,$ROBOT_SPRITE_SIZE", it.position.col.toGridPosition() , it.position.row.toGridPosition(), HERO_SPRITE_WIDTH, HERO_SPRITE_HEIGHT)
+    }
+}
+
+
+fun Int.toGridPosition() = this * (SQUARE_SIZE + GRID_THICKNESS)
+
+fun createGame() : ChaseGame {
+    var emptyCells = (0..< ROWS*COLS).map {
+        Cell(it / COLS, it % COLS)
+    }
+    val heroCell = emptyCells.random()
+    emptyCells -= heroCell
+
+    return ChaseGame(
+        Hero(heroCell, Direction.RIGHT),
+        createRobots(emptyCells),
+        emptyList()
+    )
+}
+
+fun createRobots(emptyCells: List<Cell>): List<Robot> {
+//    var robots = emptyList<Robot>()
+//    for(i in (0..NUM_ROBOTS)) {
+//        val row = (0..ROWS).random()
+//        val col = (0..COLS).random()
+//        robots += Robot(Cell(row, col))
+//    }
+//    return robots
+
+    var internalEmptyCells = emptyCells
+    return (0..<NUM_ROBOTS).map {
+        val cell = emptyCells.random()
+        internalEmptyCells -= cell
+        Robot(cell)
+    }
+}
+
+
