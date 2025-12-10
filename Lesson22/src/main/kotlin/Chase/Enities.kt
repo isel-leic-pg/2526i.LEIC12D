@@ -1,10 +1,10 @@
-package isel.pg.li32d.lesson21.Chase
+package isel.pg.li32d.lesson22.Chase
 
 
-val COLS = 5
-val ROWS = 5
-val SQUARE_SIZE = 53
-val GRID_THICKNESS = 1
+const val COLS = 5
+const val ROWS = 5
+const val SQUARE_SIZE = 53
+const val GRID_THICKNESS = 1
 const val HERO_IMAGE_WIDTH = 288
 const val HERO_IMAGE_HEIGHT = 192
 const val HERO_IMAGE_HORIZONTAL_SPRITES = 6
@@ -13,12 +13,12 @@ const val HERO_SPRITE_WIDTH = HERO_IMAGE_WIDTH/HERO_IMAGE_HORIZONTAL_SPRITES
 const val HERO_SPRITE_HEIGHT = HERO_IMAGE_HEIGHT/HERO_IMAGE_VERTICAL_SPRITES
 const val NUM_ROBOTS = 4
 const val ROBOT_SPRITE_SIZE = 64
+const val FONT_SIZE = SQUARE_SIZE/2
 
+const val CANVAS_WIDTH = COLS * SQUARE_SIZE + (COLS-1) * GRID_THICKNESS
+const val CANVAS_HEIGHT = ROWS * SQUARE_SIZE + (ROWS-1) * GRID_THICKNESS
 
-val CANVAS_WIDTH = COLS * SQUARE_SIZE + (COLS-1) * GRID_THICKNESS
-val CANVAS_HEIGHT = ROWS * SQUARE_SIZE + (ROWS-1) * GRID_THICKNESS
-
-data class ChaseGame(val player: Hero, val robots: List<Robot>, val garbage: List<Garbage>)
+data class ChaseGame(val player: Hero, val robots: List<Robot>, val garbage: List<Garbage>, val state: GameState = GameState.ONGOING)
 
 data class Hero(val position: Cell, val direction: Direction)
 
@@ -79,5 +79,11 @@ enum class Direction(val spritePosition: Cell) {
     DOWN_RIGHT(Cell(2, 4)),
 }
 
+
+enum class GameState {
+    ONGOING,
+    WON,
+    LOST
+}
 
 

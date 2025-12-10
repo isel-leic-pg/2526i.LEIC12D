@@ -1,4 +1,4 @@
-package isel.pg.li32d.lesson21.Chase
+package isel.pg.li32d.lesson22.Chase
 
 // The goal is to implement the Chase Game.
 // The chase is a grid game that has 2 kinds of actors:
@@ -10,6 +10,8 @@ package isel.pg.li32d.lesson21.Chase
 
 
 import pt.isel.canvas.Canvas
+import pt.isel.canvas.GREEN
+import pt.isel.canvas.RED
 import pt.isel.canvas.onFinish
 import pt.isel.canvas.onStart
 import kotlin.collections.forEach
@@ -30,26 +32,42 @@ fun main() {
     }
 
     c.onKeyPressed {
-        var newDirection: Direction? = it.char.newDirection()
-        if(newDirection != null) {
-            var newHeroCell = game.player.position.add(newDirection)
-            // Get new robots positions
-            val newRobotsAfterMove = game.robots.moveRobots(newHeroCell)
-            println(newRobotsAfterMove)
-            // Get new Garbage positions
-            val newGarbage = game.garbage.detectCollisions(newRobotsAfterMove)
+        if(game.state == GameState.ONGOING) {
+            var newDirection: Direction? = it.char.newDirection()
+            if(newDirection != null) {
+                // 1. Calculate the new hero position
+                var newHeroCell = game.player.position.add(newDirection)
+                var newGarbage = game.garbage
 
-            var newRobots = newRobotsAfterMove.removeRobotsWithCollisions(newGarbage)
-            println(newRobots)
-            println(newGarbage)
+                // 2. Get new robots positions
+                var newRobots = game.robots.moveRobots(newHeroCell)
+                println(newRobots)
+                // 3. Detect player collision with robots
+                var gameState = gameLost(newHeroCell, newRobots)
+                if(gameState != GameState.LOST) {
+                    // 4. Get new Garbage positions
+                    newGarbage = game.garbage.detectCollisions(newRobots)
+                    // 5. Remove robots that collided with garbage
+                    newRobots = newRobots.removeRobotsWithCollisions(newGarbage)
+                    if (heroPositionInGarbage(newHeroCell, newGarbage)) {
+                        newHeroCell = game.player.position
+                    }
+                    gameState = gameWon(newRobots)
+                }
+//                println(newRobots)
+//                println(newGarbage)
 
-            game = ChaseGame(
-                Hero(newHeroCell, newDirection),
-                newRobots,
-                newGarbage
-
-            )
-            c.drawBoard()
+                game = ChaseGame(
+                    Hero(newHeroCell, newDirection),
+                    newRobots,
+                    newGarbage,
+                    gameState
+                )
+                c.drawBoard()
+                if(gameState != GameState.ONGOING ) {
+                    c.showEndGame(gameState)
+                }
+            }
         }
     }
 
@@ -59,17 +77,47 @@ fun main() {
     println("End")
 }
 
+
+
+fun heroPositionInGarbage(heroCell: Cell, garbage: List<Garbage>): Boolean {
+    return heroCell in garbage.map { it.position }
+}
+
+fun Canvas.showEndGame(gameState: GameState) {
+    if(gameState == GameState.LOST) {
+        c.drawText(CANVAS_WIDTH / 2 - FONT_SIZE * 3, CANVAS_HEIGHT / 2 + FONT_SIZE / 2, "GAME OVER", RED, FONT_SIZE)
+    } else {
+        c.drawText(CANVAS_WIDTH / 2 - FONT_SIZE * 5, CANVAS_HEIGHT / 2 + FONT_SIZE / 2, "YOU WON!", GREEN, FONT_SIZE)
+    }
+}
+
+fun gameLost(heroCell: Cell, robots: List<Robot>): GameState {
+    return if(heroCell in robots.map { robot -> robot.position }) GameState.LOST else GameState.ONGOING
+}
+
+fun gameWon(newRobots: List<Robot>): GameState {
+    return if(newRobots.isEmpty()) GameState.WON else GameState.ONGOING
+}
+
 private fun List<Robot>.moveRobots(newHeroCell: Cell): List<Robot> {
     return this.map { robot ->
-        var newRow = robot.position.row
-        var newCol = robot.position.col
-
-        if(newHeroCell.col == newCol || newHeroCell.row != robot.position.row && abs(newHeroCell.row - newRow) < abs(newHeroCell.col - newCol)) {
-            newRow += if(newHeroCell.row > robot.position.row) 1 else -1
+        if(newHeroCell == robot.position) {
+            robot
         } else {
-            newCol +=if(newHeroCell.col > robot.position.col) 1 else -1
+            var newRow = robot.position.row
+            var newCol = robot.position.col
+
+
+            if (newHeroCell.col == newCol || newHeroCell.row != robot.position.row && abs(newHeroCell.row - newRow) < abs(
+                    newHeroCell.col - newCol
+                )
+            ) {
+                newRow += if (newHeroCell.row > robot.position.row) 1 else -1
+            } else {
+                newCol += if (newHeroCell.col > robot.position.col) 1 else -1
+            }
+            Robot(Cell(newRow, newCol))
         }
-     Robot(Cell(newRow, newCol))
     }
 
 }
